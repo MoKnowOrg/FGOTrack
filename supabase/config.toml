@@ -1,0 +1,5 @@
+project_id = "cmhgcqydkrbuxifqyxzi"
+
+[functions.delete-account]
+# The function validates the bearer token with Auth.getUser; compatible with new signing keys.
+verify_jwt = false

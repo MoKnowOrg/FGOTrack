@@ -1,0 +1,467 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0000000000000000000000C8 /* FGOTrackApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000064 /* FGOTrackApp.swift */; };
+		0000000000000000000000C9 /* Ledger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000065 /* Ledger.swift */; };
+		0000000000000000000000CA /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000066 /* Store.swift */; };
+		0000000000000000000000CB /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000067 /* Views.swift */; };
+		000000000000000000000190 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000012C /* SupabaseService.swift */; };
+		000000000000000000000191 /* AccountViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000012D /* AccountViews.swift */; };
+		000000000000000000000192 /* ReceiptCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000012E /* ReceiptCapture.swift */; };
+		000000000000000000000193 /* ReceiptAmountParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000012F /* ReceiptAmountParser.swift */; };
+		000000000000000000000194 /* ReceiptOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000130 /* ReceiptOCR.swift */; };
+		0000000000000000000001F4 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 0000000000000000000001F5 /* Supabase */; };
+		000000000000000000000334 /* QuickCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000320 /* QuickCapture.swift */; };
+		000000000000000000000335 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000321 /* WidgetSnapshot.swift */; };
+		00000000000000000000038D /* HousePoolWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000038C /* HousePoolWidget.swift */; };
+		00000000000000000000038E /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000321 /* WidgetSnapshot.swift */; };
+		000000000000000000000391 /* HousePoolWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 000000000000000000000385 /* HousePoolWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0000000000000000000003FC /* ReceiptSuggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E8 /* ReceiptSuggestions.swift */; };
+		0000000000000000000003FD /* ReceiptIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000003E9 /* ReceiptIntelligence.swift */; };
+		00000000000000000000044E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000044C /* Assets.xcassets */; };
+		00000000000000000000044F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000044D /* PrivacyInfo.xcprivacy */; };
+		000000000000000000000451 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000450 /* PrivacyInfo.xcprivacy */; };
+		0000000000000000000004B1 /* RoomInvitation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000004B0 /* RoomInvitation.swift */; };
+		0000000000000000000004B3 /* InvitationViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000004B2 /* InvitationViews.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		000000000000000000000392 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 000000000000000000000384;
+			remoteInfo = HousePoolWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		000000000000000000000390 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				000000000000000000000391 /* HousePoolWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		000000000000000000000006 /* FGOTrack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = FGOTrack.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000064 /* FGOTrackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FGOTrackApp.swift; sourceTree = "<group>"; };
+		000000000000000000000065 /* Ledger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ledger.swift; sourceTree = "<group>"; };
+		000000000000000000000066 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		000000000000000000000067 /* Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views.swift; sourceTree = "<group>"; };
+		00000000000000000000012C /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
+		00000000000000000000012D /* AccountViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountViews.swift; sourceTree = "<group>"; };
+		00000000000000000000012E /* ReceiptCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptCapture.swift; sourceTree = "<group>"; };
+		00000000000000000000012F /* ReceiptAmountParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptAmountParser.swift; sourceTree = "<group>"; };
+		000000000000000000000130 /* ReceiptOCR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptOCR.swift; sourceTree = "<group>"; };
+		000000000000000000000320 /* QuickCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCapture.swift; sourceTree = "<group>"; };
+		000000000000000000000321 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
+		000000000000000000000385 /* HousePoolWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; path = HousePoolWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		00000000000000000000038C /* HousePoolWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HousePoolWidget.swift; sourceTree = "<group>"; };
+		0000000000000000000003E8 /* ReceiptSuggestions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptSuggestions.swift; sourceTree = "<group>"; };
+		0000000000000000000003E9 /* ReceiptIntelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptIntelligence.swift; sourceTree = "<group>"; };
+		00000000000000000000044C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		00000000000000000000044D /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		000000000000000000000450 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		0000000000000000000004B0 /* RoomInvitation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomInvitation.swift; sourceTree = "<group>"; };
+		0000000000000000000004B2 /* InvitationViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvitationViews.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		000000000000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0000000000000000000001F4 /* Supabase in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000388 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		000000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000038F /* HousePoolWidget */,
+				000000000000000000000003 /* FGOTrack */,
+				000000000000000000000004 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		000000000000000000000003 /* FGOTrack */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000004B0 /* RoomInvitation.swift */,
+				0000000000000000000004B2 /* InvitationViews.swift */,
+				00000000000000000000044C /* Assets.xcassets */,
+				00000000000000000000044D /* PrivacyInfo.xcprivacy */,
+				000000000000000000000320 /* QuickCapture.swift */,
+				000000000000000000000321 /* WidgetSnapshot.swift */,
+				0000000000000000000003E8 /* ReceiptSuggestions.swift */,
+				0000000000000000000003E9 /* ReceiptIntelligence.swift */,
+				000000000000000000000064 /* FGOTrackApp.swift */,
+				000000000000000000000065 /* Ledger.swift */,
+				000000000000000000000066 /* Store.swift */,
+				000000000000000000000067 /* Views.swift */,
+				000000000000000000000130 /* ReceiptOCR.swift */,
+				00000000000000000000012F /* ReceiptAmountParser.swift */,
+				00000000000000000000012E /* ReceiptCapture.swift */,
+				00000000000000000000012D /* AccountViews.swift */,
+				00000000000000000000012C /* SupabaseService.swift */,
+			);
+			path = FGOTrack;
+			sourceTree = "<group>";
+		};
+		000000000000000000000004 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000385 /* HousePoolWidget.appex */,
+				000000000000000000000006 /* FGOTrack.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		00000000000000000000038F /* HousePoolWidget */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000038C /* HousePoolWidget.swift */,
+				000000000000000000000450 /* PrivacyInfo.xcprivacy */,
+			);
+			path = HousePoolWidget;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		000000000000000000000005 /* FGOTrack */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 00000000000000000000000B /* Build configuration list for PBXNativeTarget "FGOTrack" */;
+			buildPhases = (
+				000000000000000000000007 /* Sources */,
+				000000000000000000000008 /* Frameworks */,
+				000000000000000000000009 /* Resources */,
+				000000000000000000000390 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				000000000000000000000393 /* PBXTargetDependency */,
+			);
+			name = FGOTrack;
+			packageProductDependencies = (
+				0000000000000000000001F5 /* Supabase */,
+			);
+			productName = FGOTrack;
+			productReference = 000000000000000000000006 /* FGOTrack.app */;
+			productType = "com.apple.product-type.application";
+		};
+		000000000000000000000384 /* HousePoolWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000386 /* Build configuration list for PBXNativeTarget "HousePoolWidget" */;
+			buildPhases = (
+				000000000000000000000387 /* Sources */,
+				000000000000000000000388 /* Frameworks */,
+				000000000000000000000389 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HousePoolWidget;
+			productName = HousePoolWidget;
+			productReference = 000000000000000000000385 /* HousePoolWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		000000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 2700;
+			};
+			buildConfigurationList = 00000000000000000000000A /* Build configuration list for PBXProject "FGOTrack" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 000000000000000000000002;
+			packageReferences = (
+				0000000000000000000001F6 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
+			productRefGroup = 000000000000000000000004 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				000000000000000000000005 /* FGOTrack */,
+				000000000000000000000384 /* HousePoolWidget */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		000000000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00000000000000000000044E /* Assets.xcassets in Resources */,
+				00000000000000000000044F /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000389 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000451 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		000000000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0000000000000000000004B1 /* RoomInvitation.swift in Sources */,
+				0000000000000000000004B3 /* InvitationViews.swift in Sources */,
+				000000000000000000000334 /* QuickCapture.swift in Sources */,
+				000000000000000000000335 /* WidgetSnapshot.swift in Sources */,
+				0000000000000000000003FC /* ReceiptSuggestions.swift in Sources */,
+				0000000000000000000003FD /* ReceiptIntelligence.swift in Sources */,
+				0000000000000000000000C8 /* FGOTrackApp.swift in Sources */,
+				0000000000000000000000C9 /* Ledger.swift in Sources */,
+				0000000000000000000000CA /* Store.swift in Sources */,
+				0000000000000000000000CB /* Views.swift in Sources */,
+				000000000000000000000194 /* ReceiptOCR.swift in Sources */,
+				000000000000000000000193 /* ReceiptAmountParser.swift in Sources */,
+				000000000000000000000192 /* ReceiptCapture.swift in Sources */,
+				000000000000000000000191 /* AccountViews.swift in Sources */,
+				000000000000000000000190 /* SupabaseService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000387 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00000000000000000000038D /* HousePoolWidget.swift in Sources */,
+				00000000000000000000038E /* WidgetSnapshot.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		000000000000000000000393 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 000000000000000000000384 /* HousePoolWidget */;
+			targetProxy = 000000000000000000000392 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		00000000000000000000000C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		00000000000000000000000D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		00000000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = FGOTrack/FGOTrack.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 26JF64DL4B;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FGOTrack/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FGOTrack;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Capture bill and receipt photos to attach to your expenses.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fgotrack.house;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		00000000000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = FGOTrack/FGOTrack.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 26JF64DL4B;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FGOTrack/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FGOTrack;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Capture bill and receipt photos to attach to your expenses.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fgotrack.house;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		00000000000000000000038A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = HousePoolWidget/HousePoolWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 26JF64DL4B;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HousePoolWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "FGOTrack Widget";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fgotrack.house.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		00000000000000000000038B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = HousePoolWidget/HousePoolWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 26JF64DL4B;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HousePoolWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "FGOTrack Widget";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fgotrack.house.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		00000000000000000000000A /* Build configuration list for PBXProject "FGOTrack" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00000000000000000000000C /* Debug */,
+				00000000000000000000000D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		00000000000000000000000B /* Build configuration list for PBXNativeTarget "FGOTrack" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00000000000000000000000E /* Debug */,
+				00000000000000000000000F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		000000000000000000000386 /* Build configuration list for PBXNativeTarget "HousePoolWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00000000000000000000038A /* Debug */,
+				00000000000000000000038B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0000000000000000000001F6 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = exactVersion;
+				version = 2.55.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0000000000000000000001F5 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0000000000000000000001F6 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 000000000000000000000001 /* Project object */;
+}
