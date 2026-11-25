@@ -1,17 +1,20 @@
 import SwiftUI
 import PhotosUI
 
+/// Routes widget links such as `fgotrack://quick/photo?source=pooled`.
 @MainActor final class QuickCaptureRouter: ObservableObject {
+    enum Action: String { case photo, manual }
     static let shared = QuickCaptureRouter()
-    @Published var action: String?
+    @Published var action: Action?
     var funding: Funding?
     func open(_ url: URL) -> Bool {
-        guard url.scheme == "fgotrack", url.host == "quick", let action = url.path.split(separator: "/").first, ["photo", "manual", "inbox"].contains(String(action)) else { return false }
-        funding = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "source" }?.value.flatMap { $0 == "personal" ? .personal : $0 == "pooled" ? .pooled : nil }
-        self.action = String(action); return true
+        guard url.scheme == "fgotrack", url.host == "quick", let segment = url.path.split(separator: "/").first, let action = Action(rawValue: String(segment)) else { return false }
+        funding = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "source" }?.value.flatMap { Funding(rawValue: $0.capitalized) }
+        self.action = action; return true
     }
 }
 
+/// Camera-first capture: the photo is saved as a receipt draft immediately and reviewed later.
 struct QuickReceiptCapture: View {
     var initialFunding: Funding = .pooled
     var onSaved: (Funding) -> Void = { _ in }
@@ -27,23 +30,28 @@ struct QuickReceiptCapture: View {
     @State private var ready = false
     @State private var saved = false
     @State private var cameraDenied = false
+    @State private var cancelLoading = false
+    private let cameraAvailable = UIImagePickerController.isSourceTypeAvailable(.camera)
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                Image(systemName: "camera.viewfinder").font(.system(size: 64)).foregroundStyle(accent)
+            VStack(spacing: 20) {
+                Image(systemName: "camera.viewfinder").font(.system(size: 64)).foregroundStyle(controlAccent).accessibilityHidden(true)
                 Text("One photo. Details later.").font(.title2.bold())
-                Text("Your receipt saves immediately. We’ll suggest details using on-device text recognition and receipt AI when available. Review it later to add it to spending.").multilineTextAlignment(.center).foregroundStyle(.secondary)
-                Label("Saving to \(funding.rawValue)", systemImage: funding == .pooled ? "person.3.fill" : "person.crop.circle.fill").font(.subheadline.weight(.semibold)).foregroundStyle(accent)
+                Text("Your receipt saves immediately. FGOTrack suggests the total on this iPhone; confirm it later to add it to spending.").multilineTextAlignment(.center).foregroundStyle(.secondary)
+                Label("Saving to \(funding.rawValue)", systemImage: funding.icon).font(.subheadline.weight(.semibold)).foregroundStyle(controlAccent)
                 if cameraDenied {
-                    Button { if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) } } label: { Label("Enable camera in Settings", systemImage: "camera.fill").frame(maxWidth: .infinity).padding(12) }.buttonStyle(.bordered)
-                } else {
-                    Button { Task { await openCamera() } } label: { Label("Take photo", systemImage: "camera.fill").frame(maxWidth: .infinity).padding(12) }.buttonStyle(.borderedProminent).disabled(loading || !UIImagePickerController.isSourceTypeAvailable(.camera))
+                    Button(action: openAppSettings) { Label("Allow camera in Settings", systemImage: "gear").frame(maxWidth: .infinity) }.buttonStyle(.bordered).controlSize(.large)
+                } else if cameraAvailable {
+                    PrimaryButton(action: { Task { await openCamera() } }) { Label("Take photo", systemImage: "camera.fill") }.disabled(loading)
                 }
-                PhotosPicker(selection: $photo, matching: .images) { Label("Choose receipt photo", systemImage: "photo") }.disabled(loading)
+                PhotosPicker(selection: $photo, matching: .images) { Label("Choose from Photos", systemImage: "photo.on.rectangle").frame(maxWidth: .infinity) }
+                    .buttonStyle(.bordered).controlSize(.large).disabled(loading)
+                if !cameraAvailable { Text("The camera isn't available on this device.").font(.footnote).foregroundStyle(.secondary) }
                 if loading { ProgressView("Saving receipt…") }
-                if let message { Text(message).font(.callout).foregroundStyle(.red) }
+                if let message { Text(message).font(.callout).foregroundStyle(.red).multilineTextAlignment(.center) }
                 Spacer()
-            }.padding(24).navigationTitle("Quick receipt").toolbar { Button("Close") { dismiss() } }
+            }.padding(24).navigationTitle("Scan receipt").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { if loading { cancelLoading = true } else { dismiss() } }.disabled(saved) } }
         }
         .fullScreenCover(isPresented: $camera) { ReceiptCamera { image in save(image) }.ignoresSafeArea() }
         .task {
@@ -51,29 +59,33 @@ struct QuickReceiptCapture: View {
             funding = store.activeRoomID == nil ? .personal : initialFunding
             await openCamera()
         }
-        .onChange(of: photo) { _, item in
-            loading = true
-            Task {
-                do {
-                    guard let data = try await item?.loadTransferable(type: Data.self), photo == item, let image = UIImage(data: data) else { loading = false; return }
-                    save(image)
-                } catch { loading = false; message = error.localizedDescription }
-            }
+        .interactiveDismissDisabled(loading || saved)
+        .confirmationDialog("Stop loading this receipt?", isPresented: $cancelLoading, titleVisibility: .visible) { Button("Stop and close", role: .destructive) { dismiss() }; Button("Keep loading", role: .cancel) {} } message: { Text("This photo has not been saved. You can select it again later.") }
+        .task(id: photo) {
+            guard let item = photo else { return }
+            loading = true; message = nil
+            defer { if photo == item { loading = false; photo = nil } }
+            do {
+                let image = try await ReceiptImages.load(item)
+                guard !Task.isCancelled, photo == item, contextMatches else { return }
+                save(image)
+            } catch is CancellationError { }
+            catch { if photo == item { message = error.localizedDescription } }
         }
     }
     private func openCamera() async {
-        guard UIImagePickerController.isSourceTypeAvailable(.camera) else { return }
+        guard cameraAvailable else { return }
         if await ReceiptCameraPermission.allowed() { if !loading && !saved && photo == nil && contextMatches { camera = true } }
-        else { cameraDenied = true; message = "Enable camera access in Settings, or choose a receipt photo." }
+        else { cameraDenied = true; message = "Camera access is off. Allow it in Settings, or choose a photo instead." }
     }
     private var contextMatches: Bool { ready && expectedAccount == store.accountID && expectedRoom == store.activeRoomID }
     private func save(_ image: UIImage) {
         guard contextMatches, !saved else { loading = false; return }
         do {
-            guard let data = ReceiptImages.jpeg(image) else { throw CocoaError(.fileWriteUnknown) }
+            guard let data = ReceiptImages.jpeg(image) else { throw ReceiptImageError.unreadable }
             let filename = try store.keepReceipt(data)
             let entry = LedgerEntry(kind: .receipt, title: "Receipt to review", amount: 0, date: Date(), funding: funding, receiptFilename: filename)
-            guard store.save(entry) else { message = store.error; store.error = nil; loading = false; return }
+            try store.save(entry)
             saved = true
             store.readQuickReceipt(entry, data: data)
             // Let the camera finish dismissing before closing its parent sheet.

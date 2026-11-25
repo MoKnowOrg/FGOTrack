@@ -122,3 +122,98 @@ check(RoomInvitation.token(from: "fgotrack://invite/"+invitationToken.uuidString
 check(RoomInvitation.token(from: "fgotrack://invite/"+invitationToken.uuidString+"?room=Forged") == nil, "Untrusted room metadata rejected")
 check(RoomInvitation.token(from: "fgotrack://attacker@invite/"+invitationToken.uuidString) == nil, "Invitation credentials are rejected")
 print("Passed \(checks) checks including invitation routing")
+
+check(BudgetHealth(spent: 4999, limit: 10000).status == .healthy, "Below 50 percent stays green")
+check(BudgetHealth(spent: 5000, limit: 10000).status == .watch, "Exactly 50 percent starts yellow")
+check(BudgetHealth(spent: 7999, limit: 10000).status == .watch, "Below 80 percent stays yellow")
+check(BudgetHealth(spent: 8000, limit: 10000).status == .nearLimit, "Exactly 80 percent starts red")
+check(BudgetHealth(spent: 10000, limit: 10000).status == .reached, "Exactly at limit is red and reached")
+check(BudgetHealth(spent: 10001, limit: 10000).status == .over, "Over limit is distinct from near limit")
+check(BudgetHealth(spent: 10000, limit: 0).status == .notSet, "Unbudgeted spending never invents a safe status")
+check(BudgetHealth(spent: 0, limit: 10000).status == .healthy, "Unused configured budget is healthy")
+check(BudgetHealth(spent: 1, limit: 3).status == .healthy && BudgetHealth(spent: 2, limit: 3).status == .watch, "Small paise limits use exact thresholds")
+check(BudgetHealth(spent: Int64.max - 1, limit: Int64.max).status == .nearLimit, "Large values cannot overflow threshold calculations")
+check(BudgetHealth(spent: 15000, limit: 10000).progress == 1 && BudgetHealth(spent: 15000, limit: 10000).percentage == "150% used", "Overage is visible while progress remains bounded")
+check(BudgetHealth.poolStatus(balance: 5000, spent: 5000) == .watch, "Half-funded pool is yellow")
+check(BudgetHealth.poolStatus(balance: 2000, spent: 8000) == .nearLimit, "Twenty percent remaining pool is red")
+check(BudgetHealth.poolStatus(balance: -100, spent: 0) == .over, "Carried pool deficit is red even with no new expenses")
+check(BudgetHealth.poolStatus(balance: 0, spent: 0) == .notSet && BudgetHealth.poolStatus(balance: 0, spent: 100) == .reached, "Empty unfunded and exhausted pools are distinguished")
+print("Passed \(checks) checks including budget and pool thresholds")
+
+check(parseBudgetMoney(" 0.00 ") == 0, "Decimal zero can clear a budget")
+check(parseBudgetMoney("100.50") == 10050, "Budget entry stores exact paise")
+check(parseBudgetMoney("-1") == nil && parseBudgetMoney("1.234") == nil, "Invalid budget limits cannot be saved")
+check(parseBudgetMoney("") == nil && parseBudgetMoney("words") == nil, "Empty or nonnumeric budget input is rejected")
+print("Passed \(checks) checks including budget entry")
+
+check(BudgetHealth(spent: 3850000, limit: 4350000).percentage == "88% used", "Recurring decimal percentage displays correctly")
+check(BudgetHealth(spent: 100000, limit: 600000).percentage == "16% used", "Fractional percentages round down without crossing status thresholds")
+print("Passed \(checks) checks including fractional percentages")
+
+let initialForm = EntryFormDraft(title: "Receipt to review", amount: "", date: captureDate, funding: .personal, category: .miscellaneous, person: "", note: "")
+var autoForm = initialForm, autoBaseline = initialForm
+var backgroundReceipt = LedgerEntry(kind: .receipt, title: "Metro", amount: 0, date: captureDate, category: .travel, funding: .personal, suggestedAmount: 12345, suggestedDate: budgetMonth)
+autoForm.receiveReceiptSuggestions(backgroundReceipt, baseline: &autoBaseline)
+check(autoForm.amount == "123.45" && autoForm.title == "Metro" && autoForm.category == .travel && autoForm.date == budgetMonth, "Late receipt suggestions refresh untouched review fields")
+check(autoForm == autoBaseline, "Background suggestions do not create unsaved user edits")
+var typedForm = initialForm, typedBaseline = initialForm
+typedForm.amount = "99"; typedForm.title = "My merchant"; typedForm.category = .food; typedForm.date = Ledger.next(captureDate); typedForm.note = "Keep this note"
+typedForm.receiveReceiptSuggestions(backgroundReceipt, baseline: &typedBaseline)
+check(typedForm.amount == "99" && typedForm.title == "My merchant" && typedForm.category == .food && typedForm.date == Ledger.next(captureDate), "Late OCR cannot overwrite manually corrected fields")
+check(typedForm.note == "Keep this note" && typedForm.funding == .personal && typedForm != typedBaseline, "Receipt metadata preserves private source and dirty form state")
+var mixedForm = initialForm, mixedBaseline = initialForm; mixedForm.amount = "42"
+mixedForm.receiveReceiptSuggestions(backgroundReceipt, baseline: &mixedBaseline)
+check(mixedForm.amount == "42" && mixedForm.title == "Metro" && mixedForm != mixedBaseline, "Untouched fields refresh while edited amount remains protected")
+var confirmed = backgroundReceipt; confirmed.kind = .expense
+var confirmedForm = initialForm, confirmedBaseline = initialForm
+confirmedForm.receiveReceiptSuggestions(confirmed, baseline: &confirmedBaseline)
+check(confirmedForm == initialForm && confirmedBaseline == initialForm, "Booked expense changes are not auto-applied as OCR suggestions")
+print("Passed \(checks) checks including receipt review editing")
+
+check(money(943950).hasSuffix("9,439.50") && !money(4000000).contains("."), "Currency shows two decimals only when paise are present")
+check(parseMoney("12,50", locale: Locale(identifier: "de_DE")) == 1250 && parseMoney("12.50", locale: Locale(identifier: "de_DE")) == 1250, "Locale decimal comma accepted from the keypad")
+check(parseBudgetMoney("0,00", locale: Locale(identifier: "fr_FR")) == 0, "Locale decimal comma can clear a budget")
+check(editableAmount(12345) == "123.45" && editableAmount(47250) == "472.50" && editableAmount(500000) == "5000" && editableAmount(0) == "" && editableAmount(nil) == "", "Editable amounts omit zero")
+var merged = ReceiptSuggestions(merchant: "OCR shop", amount: 100, date: nil, category: .food).overridden(by: ReceiptSuggestions(merchant: "AI shop", amount: nil, date: nil, category: nil))
+check(merged.merchant == "AI shop" && merged.amount == 100 && merged.category == .food, "AI suggestions override OCR only where grounded")
+var manualForm = EntryFormDraft(title: "", amount: "", date: captureDate, funding: .pooled, category: .miscellaneous, person: "", note: "")
+var manualBaseline = manualForm; manualForm.amount = "50"
+manualForm.receive(merged, baseline: &manualBaseline)
+check(manualForm.amount == "50" && manualForm.title == "AI shop" && manualForm.category == .food, "Photo suggestions fill only untouched manual fields")
+let many = (0..<2000).map { LedgerEntry(id: "e\($0)", kind: .expense, title: "x", amount: 1, date: october) }
+var big = Ledger(entries: many); big.merge(many.map { var e = $0; e.amount = 2; e.modified = e.modified.addingTimeInterval(5); return e })
+check(big.entries.count == 2000 && big.spent(october) == 4000, "Large merges update in place without duplicates")
+print("Passed \(checks) checks including formatting, locale input and suggestion merging")
+
+for (input, expected) in [("249.5Uber", "249.5"), ("₹1,234.567abc", "1234.56"), (".5", "0.5"), ("12..3", "12.3"), ("abc", ""), ("12345678901", "1234567890"), ("1,00,000", "100000")] {
+    check(sanitizedAmountInput(input, locale: Locale(identifier: "en_IN")) == expected, "Amount input sanitized: \(input)")
+}
+check(sanitizedAmountInput("1.234,50", locale: Locale(identifier: "de_DE")) == "1234,50" && sanitizedAmountInput("12,5", locale: Locale(identifier: "de_DE")) == "12,5", "Locale decimal comma kept; grouping dots dropped")
+check(parseMoney(sanitizedAmountInput("1.234,50", locale: Locale(identifier: "de_DE")), locale: Locale(identifier: "de_DE")) == 123450, "Sanitized locale input parses exactly")
+
+let memoryLedger = Ledger(entries: [
+    LedgerEntry(kind: .expense, title: "Aek Coffee", amount: 18000, date: september, category: .workspace),
+    LedgerEntry(kind: .expense, title: "aek coffee ", amount: 22000, date: october, category: .workspace, person: "Asha"),
+    LedgerEntry(kind: .expense, title: "Blue Tokai Aek Branch", amount: 30000, date: october, category: .food),
+    LedgerEntry(kind: .expense, title: "Zepto", amount: 5000, date: november, category: .food, person: "asha"),
+    LedgerEntry(kind: .receipt, title: "Receipt to review", amount: 0, date: november),
+    LedgerEntry(kind: .expense, title: "Deleted shop", amount: 100, date: november, deleted: true),
+])
+let memory = EntryMemory(ledger: memoryLedger, kind: .expense)
+check(memory.suggestions(for: "aek").map(\.title) == ["aek coffee", "Blue Tokai Aek Branch"], "Prefix matches rank above word matches; spelling from latest use")
+check(memory.suggestions(for: "AEK COFFEE").isEmpty, "Exact match needs no completion")
+check(memory.merchant(named: "Aek  Coffee")?.uses == 2 && memory.merchant(named: "aek coffee")?.lastAmount == 22000, "Merchants group case- and spacing-insensitively")
+check(memory.category(for: "blue tokai aek branch") == .food && memory.category(for: "unknown") == nil, "Learned category comes from the last use")
+check(!memory.merchants.contains { $0.title == "Receipt to review" || $0.title == "Deleted shop" }, "Drafts placeholders and deleted entries are not suggested")
+check(memory.suggestions(for: "").first?.title == "aek coffee", "Empty field offers most-used merchants")
+check(memory.people == ["asha"] && memory.people(matching: "AS") == ["asha"] && memory.people(matching: "asha").isEmpty, "Names are remembered once regardless of case, latest spelling")
+
+let typed = LedgerEntry(kind: .expense, title: "AEK coffee", amount: 22000, date: october.addingTimeInterval(3600), category: .workspace)
+check(memoryLedger.possibleDuplicate(of: typed, fromReceipt: false)?.title == "aek coffee ", "Same merchant, amount and day is flagged")
+var otherDay = typed; otherDay.date = november
+check(memoryLedger.possibleDuplicate(of: otherDay, fromReceipt: false) == nil, "Different day is not a duplicate")
+var scanned = typed; scanned.title = "AEK CAFE PVT LTD"
+check(memoryLedger.possibleDuplicate(of: scanned, fromReceipt: false) == nil && memoryLedger.possibleDuplicate(of: scanned, fromReceipt: true) != nil, "Receipt confirmations match on amount and day even if OCR named it differently")
+var personalCopy = typed; personalCopy.funding = .personal
+check(memoryLedger.possibleDuplicate(of: personalCopy, fromReceipt: false) == nil, "Pooled and personal entries never collide")
+print("Passed \(checks) checks including input memory, sanitizing and duplicates")

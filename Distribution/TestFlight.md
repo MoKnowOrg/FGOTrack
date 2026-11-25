@@ -4,7 +4,7 @@ Support and beta feedback: **business@knoworganization.com**. Privacy and intern
 
 ## Build identity
 
-- App: FGOTrack, version 1.0, build 4
+- App: FGOTrack, version 1.0, build 6
 - Bundle ID: com.fgotrack.house
 - Widget: com.fgotrack.house.widget
 - Team: 26JF64DL4B

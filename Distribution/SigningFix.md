@@ -7,6 +7,6 @@ The user requested restoration to `com.fgotrack.house`. Both app and widget use 
 - App Group: `group.com.fgotrack.house`
 - iCloud container: `iCloud.com.fgotrack.house`
 - Export team: `26JF64DL4B`
-- App/widget version: 1.0 build 4
+- App/widget version: 1.0 build 6
 
-The proposed migration to another team and new containers was not applied. Existing build 4 artifacts target this restored identity. The earlier SigningFix.patch is withdrawn.
+The proposed migration to another team and new containers was not applied. Existing build 6 artifacts target this restored identity. The earlier SigningFix.patch is withdrawn.
