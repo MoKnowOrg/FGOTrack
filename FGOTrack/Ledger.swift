@@ -12,7 +12,11 @@ enum Category: String, Codable, CaseIterable, Identifiable {
         return keywords.first { $0.1.contains { value.contains($0) } }?.0
     }
 }
-enum Funding: String, Codable, CaseIterable { case pooled = "Pooled", personal = "Personal" }
+enum Funding: String, Codable, CaseIterable {
+    case pooled = "Pooled", personal = "Personal"
+    var icon: String { self == .pooled ? "person.3.fill" : "person.crop.circle.fill" }
+    var deletionWarning: String { self == .pooled ? "It will be removed from the shared room for all housemates." : "It will be removed from your personal ledger." }
+}
 enum EntryKind: String, Codable { case expense, contribution, budget, receipt }
 struct LedgerEntry: Codable, Identifiable, Equatable {
     var id: String = UUID().uuidString
@@ -36,11 +40,16 @@ struct LedgerEntry: Codable, Identifiable, Equatable {
 struct Ledger: Codable {
     var entries: [LedgerEntry] = []
     var active: [LedgerEntry] { entries.filter { !$0.deleted } }
-    static var calendar: Calendar { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "Asia/Kolkata")!; return c }
+    /// All months follow Bengaluru time so every housemate sees the same month boundaries.
+    static let calendar: Calendar = { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "Asia/Kolkata")!; return c }()
     static func start(_ date: Date) -> Date { calendar.dateInterval(of: .month, for: date)!.start }
     static func next(_ date: Date) -> Date { calendar.date(byAdding: .month, value: 1, to: start(date))! }
     static func monthID(_ date: Date) -> String { let c = calendar.dateComponents([.year, .month], from: date); return "\(c.year!)-\(c.month!)" }
-    func inMonth(_ date: Date) -> [LedgerEntry] { active.filter { $0.date >= Self.start(date) && $0.date < Self.next(date) } }
+    static func isCurrentMonth(_ date: Date) -> Bool { monthID(date) == monthID(Date()) }
+    func inMonth(_ date: Date) -> [LedgerEntry] {
+        let start = Self.start(date), end = Self.next(date)
+        return active.filter { $0.date >= start && $0.date < end }
+    }
     func balance(before date: Date) -> Int64 {
         active.filter { $0.date < date && $0.funding == .pooled }.reduce(0) { result, item in
             result + (item.kind == .contribution ? item.amount : item.kind == .expense ? -item.amount : 0)
@@ -49,22 +58,43 @@ struct Ledger: Codable {
     func spent(_ month: Date, category: Category? = nil, funding: Funding = .pooled) -> Int64 {
         inMonth(month).filter { $0.kind == .expense && $0.funding == funding && (category == nil || $0.category == category) }.reduce(0) { $0 + $1.amount }
     }
-    func added(_ month: Date) -> Int64 { inMonth(month).filter { $0.kind == .contribution }.reduce(0) { $0 + $1.amount } }
+    func added(_ month: Date) -> Int64 { inMonth(month).filter { $0.kind == .contribution && $0.funding == .pooled }.reduce(0) { $0 + $1.amount } }
     func budget(_ month: Date, category: Category, funding: Funding = .pooled) -> Int64 {
-        active.filter { $0.kind == .budget && $0.funding == funding && $0.category == category && $0.date <= Self.start(month) }.max { $0.date < $1.date }?.amount ?? 0
+        let start = Self.start(month)
+        return active.filter { $0.kind == .budget && $0.funding == funding && $0.category == category && $0.date <= start }.max { $0.date < $1.date }?.amount ?? 0
     }
+    /// Unconfirmed receipt photos, newest first. Never counted as spending.
+    func pendingReceipts(_ funding: Funding) -> [LedgerEntry] { active.filter { $0.kind == .receipt && $0.funding == funding }.sorted { $0.date > $1.date } }
     mutating func merge(_ incoming: [LedgerEntry]) {
+        // Last writer wins by modification time; an index keeps large syncs linear.
+        var index = Dictionary(entries.indices.map { (entries[$0].id, $0) }, uniquingKeysWith: { first, _ in first })
         for item in incoming {
-            if let index = entries.firstIndex(where: { $0.id == item.id }) {
-                if item.modified > entries[index].modified { entries[index] = item }
-            } else { entries.append(item) }
+            if let position = index[item.id] {
+                if item.modified > entries[position].modified { entries[position] = item }
+            } else { index[item.id] = entries.count; entries.append(item) }
         }
     }
 }
-func money(_ amount: Int64) -> String { (Decimal(amount) / 100).formatted(.currency(code: "INR").precision(.fractionLength(0...2))) }
-func parseMoney(_ text: String) -> Int64? {
-    let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard clean.range(of: "^[0-9]+(?:\\.[0-9]{1,2})?$", options: .regularExpression) != nil,
-          let value = Decimal(string: clean, locale: Locale(identifier: "en_US_POSIX")), value > 0, value <= 1_000_000_000 else { return nil }
-    return NSDecimalNumber(decimal: value * 100).int64Value
+/// Editable values, separate from background receipt metadata.
+struct EntryFormDraft: Equatable {
+    var title: String
+    var amount: String
+    var date: Date
+    var funding: Funding
+    var category: Category
+    var person: String
+    var note: String
+    /// Applies receipt suggestions only to fields the user has not changed since `baseline`,
+    /// and moves the baseline so auto-filled values do not count as user edits.
+    mutating func receive(_ suggestions: ReceiptSuggestions, baseline: inout Self) {
+        if amount == baseline.amount, let total = suggestions.amount, total > 0 { amount = editableAmount(total); baseline.amount = amount }
+        if title == baseline.title, let merchant = suggestions.merchant { title = merchant; baseline.title = title }
+        if category == baseline.category, let suggested = suggestions.category { category = suggested; baseline.category = category }
+        if date == baseline.date, let suggested = suggestions.date { date = suggested; baseline.date = date }
+    }
+    /// Background OCR/AI updates to an unconfirmed receipt draft. Booked expenses never autofill.
+    mutating func receiveReceiptSuggestions(_ entry: LedgerEntry, baseline: inout Self) {
+        guard entry.kind == .receipt else { return }
+        receive(ReceiptSuggestions(merchant: entry.title, amount: entry.suggestedAmount, date: entry.suggestedDate, category: entry.category), baseline: &baseline)
+    }
 }

@@ -60,3 +60,55 @@ Recipients open an app link or scan its QR, authenticate if needed, see the serv
 Native sharing, the QR screen and recipient preview were inspected with an isolated offline harness. The shared QR image was decoded to the exact invitation route using Apple Vision; its white quiet zone is included in the exported image. Production signed-out routing was checked separately. The invitation RPCs were deployed through migration 202610040004_room_invitations.sql and verified with rollback tests: preview grants no ledger access or membership, owner-only sharing, stable tokens, expiration/replacement and anonymous rejection. Foundation checks total 62; database checks total 56.
 
 Current links use fgotrack://invite/<token> and require FGOTrack installed. HTTPS Universal Links and an install landing page require a public domain with Apple's associated-domain configuration. They are not configured; custom-scheme links may not be clickable in every messaging app. See [Apple associated domains](https://developer.apple.com/documentation/xcode/supporting-associated-domains).
+
+## Budget colors and usability review — 5 October 2026
+
+Budget status is shared by Pooled and Personal category cards and monthly summaries: green below 50% spent, yellow at 50–79%, red from 80%. At 100% the label changes to Limit reached; above 100% it says Over budget and shows the exact overage. Unset budgets stay neutral and show spending plus a direct Set monthly limit prompt. Progress bars remain bounded while overage percentages stay visible. Categories needing attention appear first with stable ordering for equal status. An attention shortcut opens Budgets.
+
+The pool has separate funding status computed from the month-end balance and that month's booked pooled spending, so category limits do not imply funds are available. Carry-in and contributions count as pool capacity. A deficit is red even if there is no new spending; an unfunded empty pool prompts Add pool funds. The widget uses the same funding thresholds and keeps its small layout compact. Receipt drafts are still excluded from spending. Colors are paired with text and icons, following [Apple's accessibility guidance](https://developer.apple.com/design/human-interface-guidelines/accessibility). Yellow/red/green status text adapts to appearance; button controls become brighter in dark mode while filled primary actions retain a readable dark green background.
+
+Other corrections: a receipt-only search result no longer shows a contradictory No matching expenses empty state. Tapping the month label returns to this month, with a visible hint for historical months. Budget editing focuses the amount immediately, supports a keyboard Done action, accepts decimal zero to clear a limit, avoids force-unwrapped input and reports failures in the active editor. Pool totals stack into readable label/value rows at accessibility text sizes.
+
+Verified with production views in an isolated offline iPhone 17 / iOS 27 harness using synthetic expenses: red over/reached/near-limit categories, yellow spending, green spending, neutral unset limits, Pooled and Personal summaries, stable section header and scan footer, receipt-only search and one-tap month return. Dark appearance and accessibility2 text size were inspected, including the corrected pool totals and brighter controls. The harness has no Supabase configuration and a separate App Group. No household records were changed. Foundation checks total 83, including exact threshold boundaries, fractional percentages, large values, carry-in deficits and budget-input validation.
+
+Remaining usability verification: real camera/receipt capture, small older iPhones and iPad split view, live VoiceOver traversal, real-device keyboard/autofill and multi-device sync still need physical tester checks. No full accessibility conformance is claimed.
+
+## Receipt and recovery polish — build 6
+
+Further review found slow access to the receipt photo, late suggestions not updating an already-open form, accidental dismissal of edits, and backup errors interrupting locally successful saves.
+
+- Amount and merchant remain the first fields. Receipt photo is immediately below them, before source/category. Date is visible in a collapsed optional-details row; existing notes/names expand it automatically. Manual entry uses amount focus and a keyboard Next action to reach the merchant.
+- Late receipt suggestions update untouched amount, merchant, date and category fields while preserving manual corrections. Background changes to booked expenses never autofill an editor.
+- Receipt photos open from the editor's stable presentation point. The previous form-row presentation dismissed the editor on the QA simulator; the corrected viewer stays open, fits the complete photo initially and supports pinch/double-tap zoom. Closing it restores the editor and its values.
+- Expense and budget forms protect unsaved edits with Discard / Keep editing actions and block accidental swipe dismissal. Entry deletion asks for confirmation and explains shared-room impact.
+- Receipt loading exposes download retry and invalid-photo errors. Photo-library loading is cancellation-aware and allows selecting the same photo again. Save waits for attachment loading to finish; cancelling quick capture during loading warns before stopping.
+- Background sync failures show Saved locally · backup pending with Retry. A details action explains the delay to other housemates. Local save failures still use a blocking error; sync success clears the notice. Room switching and authentication controls are disabled while their relevant operation runs.
+
+Verified with production views in a separate, credential-free offline harness: delayed suggestions filled ₹472.50 and Test cafe; the nearby sample photo opened, fitted and double-tap zoomed; Done returned to the editor retaining its values. Editing the amount to ₹99 then cancelling showed the unsaved-changes warning and retaining the form preserved the correction. Simulated backup failure displayed an inline notice without an interrupting alert, and Retry cleared it. No household records were changed. Foundation checks total 89, including partial autofill, manual corrections, baseline updates and rejecting suggestions for booked entries. Debug build, signed Release archive and internal TestFlight export succeeded for version 1.0 build 6. The package has not been uploaded.
+
+The Mac locked before the last UI check of the final alert-style Keep editing button and refreshed production sign-in gate. The preceding discard warning and retained ₹99 correction were inspected; the final alert is build-verified. The offline harness was removed and production build 6 was restored and launched on the QA simulator.
+
+Physical camera, pinch gestures, older/smaller devices, iPad layout, VoiceOver and multi-device sync remain tester checks. These implementation checks do not claim complete accessibility or real-network failure coverage.
+
+## Code and UX audit — 26 November 2026
+
+Full review of every source file against Apple's Human Interface Guidelines (navigation, modality, feedback, accessibility) and Swift/SwiftUI practice (single source of truth, typed errors, no dead code).
+
+Bugs fixed:
+
+- Category suggestions stopped after the first auto-filled category: programmatic changes were recorded as a user choice. Only an explicit pick now locks the category, and the redundant "Use suggested category" button is gone.
+- Choosing "Personal only" as the active room was silently reverted on every refresh/foreground. The option is removed (Personal is always its own tab); with several rooms the room title is a switcher menu.
+- Settings export/restore errors went to a root alert hidden behind the Settings sheet, and a successful restore gave no feedback. Both now report in place; export is one tap through the Files exporter.
+- Stale account errors resurfaced later as unrelated alerts (failed member refresh, failed join, sign-out). They are cleared when consumed.
+- Currency showed `₹9,439.5`; amounts with paise now always show two decimals, including in editable fields.
+- The amount field rejected the keypad's decimal comma in locales that use one.
+- The legacy "Import existing local ledger" option appeared even when there was nothing to import.
+- Widget said "1 receipts" and "0 receipts to review".
+- Password recovery had no way to back out and no mismatch hint. Sign out had no confirmation and sat beside Delete account.
+- Room name field disabled capitalization; version text was hard-coded.
+
+Cleanup: removed the unreachable iCloud/CloudKit sync and sharing path (~150 lines; `sync()` returned before reaching it). Store saves throw typed errors instead of setting a shared alert string. Views.swift is split into EntryEditor, BudgetViews and SettingsView; shared colors and components (BrandMark, PrimaryButton, AmountField, card/inputField, messageAlert) live in DesignSystem.swift; money helpers in Money.swift are shared by the app, widget and tests. An AccentColor asset gives sheets and system controls the brand tint. Month queries no longer rebuild the calendar per entry, and ledger merges are linear.
+
+UX: overview shows the three most urgent categories with See all instead of duplicating the Budgets tab; the redundant toolbar camera button is removed (the Scan receipt bar remains); a photo added in the editor fills only empty or untouched fields instead of offering two separate "use suggestion" buttons; camera denial in the editor offers a Settings button; members are managed from a per-person menu; the Expenses list shows a month total and attachment indicator; search also matches notes.
+
+Verified on an iPhone 17 / iOS 27 simulator with a temporary offline harness (fake account, synthetic data, no Supabase connection; removed afterwards): Pooled overview, Expenses, receipt review editor, manual entry with merchant-based category suggestion and save, Personal tab in dark mode. Foundation checks total 96. Sign-in, room flows, camera capture and VoiceOver were not exercised in this pass.

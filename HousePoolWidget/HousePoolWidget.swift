@@ -15,14 +15,16 @@ struct PoolTimelineProvider: TimelineProvider {
 struct PoolWidgetView: View {
     let entry: PoolTimelineEntry
     @Environment(\.widgetFamily) private var family
+    private var status: BudgetStatus { BudgetHealth.poolStatus(balance: entry.snapshot.balance, spent: entry.snapshot.spent) }
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
             Label("HOUSE POOL", systemImage: "house.fill").font(.caption2.bold())
             if entry.snapshot.updated == .distantPast { Text("Open FGOTrack to get started").font(.headline) }
             else {
-                Text((Double(entry.snapshot.balance) / 100).formatted(.currency(code: "INR").precision(.fractionLength(0...2)))).font(.title.bold()).minimumScaleFactor(0.5).lineLimit(1).privacySensitive()
-                Text(entry.snapshot.month).font(.caption).foregroundStyle(.secondary)
-                Text("\(entry.snapshot.pending) receipts to review").font(.caption).foregroundStyle(.secondary).privacySensitive()
+                Text(money(entry.snapshot.balance)).font(.title.bold()).foregroundStyle(status.textColor).minimumScaleFactor(0.5).lineLimit(1).privacySensitive()
+                Label(status.poolLabel, systemImage: status.icon).font(.caption.weight(.semibold)).foregroundStyle(status.textColor)
+                if family == .systemMedium { Text(entry.snapshot.month).font(.caption).foregroundStyle(.secondary) }
+                if entry.snapshot.pending > 0 { Text("\(entry.snapshot.pending) \(entry.snapshot.pending == 1 ? "receipt" : "receipts") to review").font(.caption).foregroundStyle(.secondary).privacySensitive() }
             }
             Spacer(minLength: 0)
             if family == .systemMedium {

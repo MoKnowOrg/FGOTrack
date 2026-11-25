@@ -16,6 +16,12 @@ struct ReceiptSuggestions {
     var date: Date?
     var category: Category?
 
+    /// Prefers fields from `better` (on-device AI) and keeps OCR values it could not ground.
+    func overridden(by better: Self?) -> Self {
+        guard let better else { return self }
+        return Self(merchant: better.merchant ?? merchant, amount: better.amount ?? amount, date: better.date ?? date, category: better.category ?? category)
+    }
+    var isEmpty: Bool { merchant == nil && amount == nil && date == nil && category == nil }
     static func fallback(_ text: String) -> Self {
         let merchant = text.components(separatedBy: .newlines).prefix(4).first {
             $0.count >= 3 && $0.count <= 80 && $0.rangeOfCharacter(from: .letters) != nil && !$0.lowercased().contains("invoice") && !$0.lowercased().contains("receipt")
