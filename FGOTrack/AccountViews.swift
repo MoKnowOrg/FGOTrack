@@ -10,6 +10,7 @@ struct AccountSections: View {
     @State private var importing = false
     @State private var deleting = false
     @State private var transferring: RoomMember?
+    @State private var leaving = false
     var body: some View {
         Group {
             if let user = backend.user {
@@ -43,6 +44,7 @@ struct AccountSections: View {
                             }
                         }
                         Button("Refresh people & rooms") { Task { await backend.refreshRooms() } }.disabled(backend.working || store.syncing)
+                        if !backend.isOwner { Button("Leave room", role: .destructive) { leaving = true }.disabled(backend.working || store.syncing) }
                     }
                     if store.canImportLocalLedger {
                         Section("Existing bills on this iPhone") {
@@ -60,6 +62,7 @@ struct AccountSections: View {
         .confirmationDialog("Import this iPhone's existing bills into \(backend.currentRoom?.name ?? "this room")?", isPresented: $importing, titleVisibility: .visible) { Button("Import ledger") { do { try store.importLocalLedger() } catch { store.error = error.localizedDescription } } } message: { Text("This adds previous pooled bills, contributions, and budgets to the room. Personal bills stay private. You can do this once per account.") }
         .confirmationDialog("Delete your FGOTrack account?", isPresented: $deleting, titleVisibility: .visible) { Button("Delete account permanently", role: .destructive) { Task { _ = await backend.deleteAccount() } } } message: { Text("This deletes your account and private ledger/photos. Shared rooms remain with their members. Transfer ownership first if your room has housemates. This cannot be undone.") }
         .confirmationDialog("Make \(transferring?.display_name ?? "member") the room owner?", isPresented: Binding(get: { transferring != nil }, set: { if !$0 { transferring = nil } }), titleVisibility: .visible) { Button("Transfer ownership") { if let member = transferring { Task { await backend.transferOwnership(to: member) } }; transferring = nil } } message: { Text("They will manage invitations and membership. You will stay in the room as a member.") }
+        .confirmationDialog("Leave \(backend.currentRoom?.name ?? "this room")?", isPresented: $leaving, titleVisibility: .visible) { Button("Leave room", role: .destructive) { Task { await backend.leaveRoom() } } } message: { Text("You will lose access to this room's pooled bills, budgets and receipt photos. Pooled data stays with the room for its other members. Your personal expenses are not affected. You can rejoin later with a new invitation.") }
         .onChange(of: backend.roomID) { _, _ in inviting = false }
         .onChange(of: backend.user?.id) { _, _ in inviting = false }
     }
