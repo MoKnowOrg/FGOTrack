@@ -29,7 +29,7 @@ struct ContentView: View {
             }
         }
         .tint(controlAccent)
-        .sheet(item: $editor) { route in EntryEditor(kind: route.kind, existing: route.entry, month: route.month, funding: route.funding) }
+        .sheet(item: $editor) { EntryEditor(route: $0) }
         .sheet(item: Binding(get: { capture.map(CaptureRoute.init) }, set: { capture = $0?.funding })) { route in
             QuickReceiptCapture(initialFunding: route.funding) { funding in receiptNotice = (UUID(), funding) }
         }
@@ -42,14 +42,21 @@ struct ContentView: View {
         .messageAlert("Needs attention", message: $store.error)
         .overlay(alignment: .top) {
             if let notice = receiptNotice {
-                Label("Saved to \(notice.funding.rawValue) · review it later", systemImage: "checkmark.circle.fill")
-                    .font(.subheadline.weight(.semibold)).padding(14)
-                    .background(.regularMaterial, in: Capsule()).padding(.horizontal, 16).padding(.top, 8)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .allowsHitTesting(false)
+                Banner(text: "Saved to \(notice.funding.rawValue) · review it later", icon: "checkmark.circle.fill").allowsHitTesting(false)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if let deleted = store.recentlyDeleted {
+                Banner(text: "Deleted \(deleted.title)", icon: "trash", action: ("Undo", undoDelete)).padding(.bottom, 120)
             }
         }
         .animation(.snappy, value: receiptNotice?.id)
+        .animation(.snappy, value: store.recentlyDeleted?.id)
+        .task(id: store.recentlyDeleted?.id) {
+            guard store.recentlyDeleted != nil else { return }
+            try? await Task.sleep(for: .seconds(6))
+            if !Task.isCancelled { store.recentlyDeleted = nil }
+        }
         .task(id: receiptNotice?.id) {
             guard let notice = receiptNotice else { return }
             UIAccessibility.post(notification: .announcement, argument: "Receipt saved to \(notice.funding.rawValue)")
@@ -67,6 +74,7 @@ struct ContentView: View {
         .onChange(of: store.activeRoomID) { _, room in editor = nil; capture = nil; if room != nil { selected = .pooled } }
         .onChange(of: phase) { _, value in if value == .active, backend.user != nil { Task { await backend.refreshRooms() } } }
     }
+    private func undoDelete() { do { try store.undoRemove() } catch { store.error = error.localizedDescription } }
     private func resumePendingRoute() { if invitations.pending != nil { presentInvitation() } else { consumeShortcut() } }
     private func presentInvitation() {
         guard !backend.restoringSession, !backend.recoveringPassword, let user = backend.user?.id, let token = invitations.pending else { return }
@@ -102,15 +110,19 @@ struct WorkspaceView: View {
     @EnvironmentObject private var backend: SupabaseService
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var month = Ledger.start(Date())
-    @State private var section = WorkspaceSection.overview
+    @SceneStorage private var section: WorkspaceSection
     @State private var editor: EditorRoute?
-    @State private var budgetCategory: Category?
     @State private var roomEditor: RoomEditorMode?
     @State private var inviting = false
     @State private var deletingEntry: LedgerEntry?
     @State private var search = ""
     @FocusState private var searchFocused: Bool
     private enum WorkspaceSection: String, CaseIterable { case overview = "Overview", expenses = "Expenses", budgets = "Budgets" }
+    init(funding: Funding, scan: @escaping () -> Void, settings: @escaping () -> Void) {
+        self.funding = funding; self.scan = scan; self.settings = settings
+        // Each tab remembers whether you were on Overview, Expenses or Budgets.
+        _section = SceneStorage(wrappedValue: .overview, "workspace-section-\(funding.rawValue)")
+    }
     private var pooled: Bool { funding == .pooled }
     private var ready: Bool { !pooled || backend.currentRoom != nil }
     private var ledger: Ledger { store.ledger }
@@ -136,6 +148,7 @@ struct WorkspaceView: View {
             }
             .background(canvas)
             .navigationTitle(pooled ? (backend.currentRoom?.name ?? "Pooled") : "Personal")
+            .navigationDestination(for: Category.self) { CategoryDetailView(category: $0, funding: funding, month: month) }
             .navigationBarTitleDisplayMode(.inline)
             .modifier(RoomTitleMenu(enabled: pooled && backend.rooms.count > 1, menu: roomMenu))
             .safeAreaInset(edge: .bottom, spacing: 0) { if ready { VStack(spacing: 0) { if store.syncError != nil { SyncNotice() }; captureBar } } }
@@ -145,8 +158,7 @@ struct WorkspaceView: View {
                 ToolbarItem(placement: .topBarTrailing) { Button(action: settings) { Image(systemName: "person.crop.circle") }.accessibilityLabel("Account and settings") }
             }
         }
-        .sheet(item: $editor) { route in EntryEditor(kind: route.kind, existing: route.entry, month: month, funding: funding) }
-        .sheet(item: $budgetCategory) { category in BudgetEditor(category: category, funding: funding, month: month) }
+        .sheet(item: $editor) { EntryEditor(route: $0, month: month) }
         .sheet(item: $roomEditor) { RoomEditor(mode: $0) }
         .sheet(isPresented: $inviting) { if let room = backend.currentRoom { InvitePeopleView(room: room) } }
         .confirmationDialog(deletingEntry?.kind == .receipt ? "Delete this receipt?" : "Delete this entry?", isPresented: Binding(present: $deletingEntry), titleVisibility: .visible) {
@@ -156,12 +168,13 @@ struct WorkspaceView: View {
         .onChange(of: store.activeRoomID) { _, _ in resetPresentations(); search = "" }
         .onChange(of: store.accountID) { _, _ in resetPresentations(); roomEditor = nil; search = ""; month = Ledger.start(Date()); section = .overview }
     }
-    private func resetPresentations() { editor = nil; budgetCategory = nil; inviting = false; deletingEntry = nil; searchFocused = false }
+    private func resetPresentations() { editor = nil; inviting = false; deletingEntry = nil; searchFocused = false }
     private func delete(_ item: LedgerEntry) {
         do { try store.remove(item) } catch { store.error = error.localizedDescription }
         deletingEntry = nil
     }
     private func add(_ kind: EntryKind) { searchFocused = false; editor = EditorRoute(kind: kind, funding: funding, month: month) }
+    private func repeatEntry(_ item: LedgerEntry) { editor = EditorRoute(kind: item.kind, funding: funding, template: item) }
     private func edit(_ item: LedgerEntry) { editor = EditorRoute(kind: item.kind == .receipt ? .expense : item.kind, entry: item, funding: funding) }
 
     // MARK: Header and footer
@@ -277,7 +290,7 @@ struct WorkspaceView: View {
         }.buttonStyle(.plain)
     }
     private func categoryCards(_ items: [CategoryBudget]) -> some View {
-        ForEach(items) { item in Button { budgetCategory = item.category } label: { BudgetRow(budget: item) }.buttonStyle(.plain) }
+        ForEach(items) { item in NavigationLink(value: item.category) { BudgetRow(budget: item) }.buttonStyle(.plain) }
     }
 
     // MARK: Expenses
@@ -302,6 +315,12 @@ struct WorkspaceView: View {
                     ForEach(entries) { item in
                         Button { edit(item) } label: { EntryRow(entry: item) }.buttonStyle(.plain)
                             .swipeActions { Button("Delete", role: .destructive) { deletingEntry = item } }
+                            .swipeActions(edge: .leading) { Button { repeatEntry(item) } label: { Label("Add again", systemImage: "arrow.clockwise") }.tint(controlAccent) }
+                            .contextMenu {
+                                Button { edit(item) } label: { Label("Edit", systemImage: "pencil") }
+                                Button { repeatEntry(item) } label: { Label("Add again today", systemImage: "arrow.clockwise") }
+                                Button(role: .destructive) { deletingEntry = item } label: { Label("Delete", systemImage: "trash") }
+                            }
                     }
                 } header: { Text(pooled ? "Pool activity" : "Expenses") }
                 footer: { Text("\(entries.count) \(entries.count == 1 ? "entry" : "entries") · \(money(entries.filter { $0.kind == .expense }.reduce(0) { $0 + $1.amount })) spent") }
@@ -322,7 +341,7 @@ struct WorkspaceView: View {
                 let limit = categories.reduce(0) { $0 + $1.limit }
                 if limit > 0 { MonthlyBudgetSummary(spent: spent, limit: limit) }
                 else { Text("Set monthly limits").font(.title2.bold()) }
-                Text(pooled ? "Limits apply to the shared room. Tap a category to edit." : "Limits apply only to your personal expenses. Tap a category to edit.").font(.subheadline).foregroundStyle(.secondary)
+                Text(pooled ? "Limits apply to the shared room. Tap a category to see its expenses or change its limit." : "Limits apply only to your personal expenses. Tap a category to see its expenses or change its limit.").font(.subheadline).foregroundStyle(.secondary)
                 categoryCards(categories)
                 Text("Green under 50% · Yellow 50–79% · Red 80% and above. Limits continue into future months until you change them.").font(.caption).foregroundStyle(.secondary)
             }.padding(20)

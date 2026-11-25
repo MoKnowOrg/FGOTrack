@@ -113,11 +113,11 @@ struct JoinInvitationView: View {
                         if !preview.already_member {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Your name in the room").font(.caption).foregroundStyle(.secondary)
-                                TextField("Name", text: $name).textContentType(.name).submitLabel(.join).onSubmit { Task { await join() } }.inputField()
+                                TextField("Name", text: limited($name, to: InputLimit.name)).textContentType(.name).textInputAutocapitalization(.words).submitLabel(.join).onSubmit { Task { await join() } }.inputField()
                             }
                         }
                         PrimaryButton(loading: busy, action: { Task { await join() } }) { Text(preview.already_member ? "Open room" : "Join room") }
-                            .disabled(busy || name.trimmed.isEmpty || name.count > 80)
+                            .disabled(busy || name.trimmed.isEmpty)
                         if store.syncing { Text("Finishing a backup first…").font(.caption).foregroundStyle(.secondary) }
                     } else if loading { ProgressView("Opening invitation…") }
                     if let message {
@@ -151,7 +151,7 @@ struct InvitationEntryView: View {
             VStack(alignment: .leading, spacing: 20) {
                 Label("Open your housemate's invitation", systemImage: "person.badge.plus").font(.title2.bold())
                 Text("Tap the invitation link you received, or scan their QR code with the iPhone Camera. You'll see the room before joining.").foregroundStyle(.secondary)
-                TextField("Invitation link or code", text: $value).textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.go).onSubmit(open).inputField()
+                TextField("Invitation link or code", text: $value).keyboardType(.URL).textContentType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.go).onSubmit(open).inputField()
                 if !value.trimmed.isEmpty && token == nil { Text("That doesn't look like an FGOTrack invitation link.").font(.caption).foregroundStyle(.red) }
                 PasteButton(payloadType: String.self) { values in if let text = values.first { value = text } }.buttonBorderShape(.capsule)
                 PrimaryButton(action: open) { Text("Open invitation") }.disabled(token == nil)

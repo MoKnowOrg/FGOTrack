@@ -184,3 +184,36 @@ let many = (0..<2000).map { LedgerEntry(id: "e\($0)", kind: .expense, title: "x"
 var big = Ledger(entries: many); big.merge(many.map { var e = $0; e.amount = 2; e.modified = e.modified.addingTimeInterval(5); return e })
 check(big.entries.count == 2000 && big.spent(october) == 4000, "Large merges update in place without duplicates")
 print("Passed \(checks) checks including formatting, locale input and suggestion merging")
+
+for (input, expected) in [("249.5Uber", "249.5"), ("₹1,234.567abc", "1234.56"), (".5", "0.5"), ("12..3", "12.3"), ("abc", ""), ("12345678901", "1234567890"), ("1,00,000", "100000")] {
+    check(sanitizedAmountInput(input, locale: Locale(identifier: "en_IN")) == expected, "Amount input sanitized: \(input)")
+}
+check(sanitizedAmountInput("1.234,50", locale: Locale(identifier: "de_DE")) == "1234,50" && sanitizedAmountInput("12,5", locale: Locale(identifier: "de_DE")) == "12,5", "Locale decimal comma kept; grouping dots dropped")
+check(parseMoney(sanitizedAmountInput("1.234,50", locale: Locale(identifier: "de_DE")), locale: Locale(identifier: "de_DE")) == 123450, "Sanitized locale input parses exactly")
+
+let memoryLedger = Ledger(entries: [
+    LedgerEntry(kind: .expense, title: "Aek Coffee", amount: 18000, date: september, category: .workspace),
+    LedgerEntry(kind: .expense, title: "aek coffee ", amount: 22000, date: october, category: .workspace, person: "Asha"),
+    LedgerEntry(kind: .expense, title: "Blue Tokai Aek Branch", amount: 30000, date: october, category: .food),
+    LedgerEntry(kind: .expense, title: "Zepto", amount: 5000, date: november, category: .food, person: "asha"),
+    LedgerEntry(kind: .receipt, title: "Receipt to review", amount: 0, date: november),
+    LedgerEntry(kind: .expense, title: "Deleted shop", amount: 100, date: november, deleted: true),
+])
+let memory = EntryMemory(ledger: memoryLedger, kind: .expense)
+check(memory.suggestions(for: "aek").map(\.title) == ["aek coffee", "Blue Tokai Aek Branch"], "Prefix matches rank above word matches; spelling from latest use")
+check(memory.suggestions(for: "AEK COFFEE").isEmpty, "Exact match needs no completion")
+check(memory.merchant(named: "Aek  Coffee")?.uses == 2 && memory.merchant(named: "aek coffee")?.lastAmount == 22000, "Merchants group case- and spacing-insensitively")
+check(memory.category(for: "blue tokai aek branch") == .food && memory.category(for: "unknown") == nil, "Learned category comes from the last use")
+check(!memory.merchants.contains { $0.title == "Receipt to review" || $0.title == "Deleted shop" }, "Drafts placeholders and deleted entries are not suggested")
+check(memory.suggestions(for: "").first?.title == "aek coffee", "Empty field offers most-used merchants")
+check(memory.people == ["asha"] && memory.people(matching: "AS") == ["asha"] && memory.people(matching: "asha").isEmpty, "Names are remembered once regardless of case, latest spelling")
+
+let typed = LedgerEntry(kind: .expense, title: "AEK coffee", amount: 22000, date: october.addingTimeInterval(3600), category: .workspace)
+check(memoryLedger.possibleDuplicate(of: typed, fromReceipt: false)?.title == "aek coffee ", "Same merchant, amount and day is flagged")
+var otherDay = typed; otherDay.date = november
+check(memoryLedger.possibleDuplicate(of: otherDay, fromReceipt: false) == nil, "Different day is not a duplicate")
+var scanned = typed; scanned.title = "AEK CAFE PVT LTD"
+check(memoryLedger.possibleDuplicate(of: scanned, fromReceipt: false) == nil && memoryLedger.possibleDuplicate(of: scanned, fromReceipt: true) != nil, "Receipt confirmations match on amount and day even if OCR named it differently")
+var personalCopy = typed; personalCopy.funding = .personal
+check(memoryLedger.possibleDuplicate(of: personalCopy, fromReceipt: false) == nil, "Pooled and personal entries never collide")
+print("Passed \(checks) checks including input memory, sanitizing and duplicates")

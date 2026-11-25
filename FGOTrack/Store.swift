@@ -63,7 +63,19 @@ import WidgetKit
         updateWidget()
         Task { await sync() }
     }
-    func remove(_ entry: LedgerEntry) throws { var item = entry; item.deleted = true; try save(item) }
+    /// The entry most recently deleted by the user, offered for Undo until replaced or cleared.
+    @Published var recentlyDeleted: LedgerEntry?
+    func remove(_ entry: LedgerEntry) throws {
+        var item = entry; item.deleted = true
+        try save(item)
+        recentlyDeleted = entry
+    }
+    func undoRemove() throws {
+        guard var entry = recentlyDeleted else { return }
+        recentlyDeleted = nil
+        entry.deleted = false
+        try save(entry)
+    }
     func setBudget(_ amount: Int64, category: Category, month: Date, funding: Funding) throws {
         try save(LedgerEntry(id: "budget-\(funding == .personal ? "personal-" : "")\(Ledger.monthID(month))-\(category.rawValue)", kind: .budget, title: category.rawValue, amount: amount, date: Ledger.start(month), category: category, funding: funding))
     }
@@ -98,7 +110,7 @@ import WidgetKit
         let personal = accountID == user && user != nil ? ledger.entries.filter { $0.funding == .personal } : []
         if accountID != nil { persistQuietly() }
         generation += 1; syncing = false; syncAgain = false
-        accountID = user; activeRoomID = room
+        accountID = user; activeRoomID = room; recentlyDeleted = nil
         url = user.map { Self.baseDirectory.appendingPathComponent("accounts/\($0.uuidString)/\(room?.uuidString ?? "personal")/ledger.json") } ?? Self.legacyLedgerURL
         if user != nil { load(url) } else { ledger = Ledger(); storageReadable = true }
         syncError = nil; syncStatus = "Saved on this iPhone"

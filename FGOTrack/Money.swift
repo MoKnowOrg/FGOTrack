@@ -34,6 +34,27 @@ func parseBudgetMoney(_ text: String, locale: Locale = .current) -> Int64? {
     return parseMoney(clean, locale: locale)
 }
 
+/// Keeps typed or pasted text in the shape of a rupee amount: digits, one decimal separator and
+/// at most two decimals. Letters, symbols and grouping commas are dropped, so "₹1,234.567abc"
+/// becomes "1234.56". The separator the user typed ("." or the locale's) is kept.
+func sanitizedAmountInput(_ text: String, locale: Locale = .current) -> String {
+    let localeSeparator = Character(locale.decimalSeparator ?? ".")
+    let separators: Set<Character> = [".", localeSeparator]
+    let positions = text.indices.filter { separators.contains(text[$0]) }
+    // One kind of separator: the first is decimal. Mixed (e.g. "1.234,50"): the last is decimal.
+    let decimalIndex = Set(positions.map { text[$0] }).count > 1 ? positions.last : positions.first
+    var whole = "", fraction = "", separator: Character?
+    for index in text.indices {
+        let character = text[index]
+        if index == decimalIndex { separator = character; continue }
+        guard character.isASCII, character.isNumber else { continue }
+        if separator == nil { if whole.count < 10 { whole.append(character) } }
+        else if fraction.count < 2 { fraction.append(character) }
+    }
+    guard let separator else { return whole }
+    return (whole.isEmpty ? "0" : whole) + String(separator) + fraction
+}
+
 extension String {
     var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
 }

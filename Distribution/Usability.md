@@ -112,3 +112,19 @@ Cleanup: removed the unreachable iCloud/CloudKit sync and sharing path (~150 lin
 UX: overview shows the three most urgent categories with See all instead of duplicating the Budgets tab; the redundant toolbar camera button is removed (the Scan receipt bar remains); a photo added in the editor fills only empty or untouched fields instead of offering two separate "use suggestion" buttons; camera denial in the editor offers a Settings button; members are managed from a per-person menu; the Expenses list shows a month total and attachment indicator; search also matches notes.
 
 Verified on an iPhone 17 / iOS 27 simulator with a temporary offline harness (fake account, synthetic data, no Supabase connection; removed afterwards): Pooled overview, Expenses, receipt review editor, manual entry with merchant-based category suggestion and save, Personal tab in dark mode. Foundation checks total 96. Sign-in, room flows, camera capture and VoiceOver were not exercised in this pass.
+
+## Input memory and ease-of-use pass — 26 November 2026
+
+- Tapping a category (Overview or Budgets) opens that category's month: its status, its expenses, Add expense with the category preselected, and Change monthly limit. Previously it jumped straight into the limit editor.
+- Merchant autocomplete: typing "aek" offers "Aek Coffee · Cafes & coworking · ₹220". Suggestions come from the ledger itself, so they sync across devices and housemates and need no extra storage. Matching ignores case, accents and spacing; whole-name prefixes rank above word prefixes. An empty field offers the most-used merchants. Picking one fills the name, its last category and (if empty) its last amount.
+- Learned categories: an exact known merchant uses its last category before falling back to keyword rules. Logged-by/contributor names are suggested the same way.
+- Amount fields accept only digits and one decimal separator with up to two decimals; letters, symbols and grouping commas typed or pasted are removed ("2a2b0.5x0z9" → "220.50"). Name, merchant and note fields have length limits; merchant names no longer autocorrect.
+- Duplicate guard: a new expense with the same merchant, amount and day, or a receipt confirmation with the same amount and day, asks before saving.
+- Undo: deleting an entry shows "Deleted … · Undo" for six seconds.
+- "Add again" (leading swipe or long-press) copies an expense to today for recurring bills.
+- Date is always visible in the editor. Each tab remembers Overview/Expenses/Budgets.
+- Sign-in remembers the last email on this iPhone and opens on Sign in for returning users. The visible-password field no longer autocorrects or capitalises.
+
+Verified in the iPhone 17 / iOS 27 simulator with the temporary offline harness (removed afterwards): category detail for Food and Rent, the Aek Coffee suggestion, amount cleaning, save, swipe delete and Undo. Foundation checks total 116. Not exercised: duplicate alert and sign-in changes on device.
+
+Password AutoFill limits: iOS offers saved logins, "Save password?" and strong-password suggestions only for apps linked to a website through an associated domain (`webcredentials:`). The app has none, so those prompts cannot appear yet.

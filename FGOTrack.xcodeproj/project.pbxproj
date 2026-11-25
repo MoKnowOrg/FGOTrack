@@ -37,6 +37,7 @@
 		0000000000000000000005D6 /* EntryEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000005D5 /* EntryEditor.swift */; };
 		0000000000000000000005D8 /* BudgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000005D7 /* BudgetViews.swift */; };
 		0000000000000000000005DA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000005D9 /* SettingsView.swift */; };
+		0000000000000000000005DC /* EntryMemory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000005DB /* EntryMemory.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -91,6 +92,7 @@
 		0000000000000000000005D5 /* EntryEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryEditor.swift; sourceTree = "<group>"; };
 		0000000000000000000005D7 /* BudgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetViews.swift; sourceTree = "<group>"; };
 		0000000000000000000005D9 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		0000000000000000000005DB /* EntryMemory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryMemory.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -129,6 +131,7 @@
 				0000000000000000000005D5 /* EntryEditor.swift */,
 				0000000000000000000005D7 /* BudgetViews.swift */,
 				0000000000000000000005D9 /* SettingsView.swift */,
+				0000000000000000000005DB /* EntryMemory.swift */,
 				0000000000000000000004C0 /* BudgetHealth.swift */,
 				0000000000000000000004B0 /* RoomInvitation.swift */,
 				0000000000000000000004B2 /* InvitationViews.swift */,
@@ -271,6 +274,7 @@
 				0000000000000000000005D6 /* EntryEditor.swift in Sources */,
 				0000000000000000000005D8 /* BudgetViews.swift in Sources */,
 				0000000000000000000005DA /* SettingsView.swift in Sources */,
+				0000000000000000000005DC /* EntryMemory.swift in Sources */,
 				0000000000000000000004C1 /* BudgetHealth.swift in Sources */,
 				0000000000000000000004B1 /* RoomInvitation.swift in Sources */,
 				0000000000000000000004B3 /* InvitationViews.swift in Sources */,

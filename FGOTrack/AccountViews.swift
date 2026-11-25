@@ -96,9 +96,11 @@ struct DeleteAccountSection: View {
 struct SignInView: View {
     @EnvironmentObject private var backend: SupabaseService
     @ObservedObject private var invitation = RoomInvitationRouter.shared
-    @State private var email = ""
+    /// The last email used on this iPhone, so returning users land on Sign in with it filled in.
+    private static let lastEmailKey = "last-sign-in-email"
+    @State private var email = UserDefaults.standard.string(forKey: SignInView.lastEmailKey) ?? ""
     @State private var password = ""
-    @State private var creating = true
+    @State private var creating = UserDefaults.standard.string(forKey: SignInView.lastEmailKey) == nil
     @State private var showPassword = false
     @State private var message: String?
     @State private var privacy = false
@@ -130,7 +132,8 @@ struct SignInView: View {
                             .focused($focused, equals: .email).submitLabel(.next).onSubmit { focused = .password }.inputField()
                         HStack {
                             Group { if showPassword { TextField("Password", text: $password) } else { SecureField("Password", text: $password) } }
-                                .textContentType(creating ? .newPassword : .password).focused($focused, equals: .password).submitLabel(.go).onSubmit(submit)
+                                .textContentType(creating ? .newPassword : .password).textInputAutocapitalization(.never).autocorrectionDisabled()
+                                .focused($focused, equals: .password).submitLabel(.go).onSubmit(submit)
                             Button { showPassword.toggle() } label: { Image(systemName: showPassword ? "eye.slash" : "eye").frame(width: 44, height: 44) }
                                 .accessibilityLabel(showPassword ? "Hide password" : "Show password")
                         }.padding(.leading, 16).padding(.trailing, 6).background(cardBackground, in: RoundedRectangle(cornerRadius: 14))
@@ -161,6 +164,7 @@ struct SignInView: View {
                     }
                 }.padding(24)
             }.background(canvas).tint(controlAccent).scrollDismissesKeyboard(.interactively)
+            .onAppear { if !creating && validEmail { focused = .password } }
             .sheet(isPresented: $privacy) { NavigationStack { PrivacyPolicyView().toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { privacy = false } } } } }
         }
     }
@@ -174,7 +178,11 @@ struct SignInView: View {
     private func submit() {
         guard canSubmit else { return }
         focused = nil; message = nil; backend.error = nil
-        Task { message = await backend.signInEmail(trimmedEmail, password: password, createAccount: creating) }
+        let address = trimmedEmail.lowercased()
+        Task {
+            message = await backend.signInEmail(address, password: password, createAccount: creating)
+            if backend.error == nil { UserDefaults.standard.set(address, forKey: Self.lastEmailKey) }
+        }
     }
 }
 
@@ -232,13 +240,13 @@ struct CreateRoomView: View {
     @State private var roomName = ""
     @State private var name = ""
     @FocusState private var focused: Bool
-    private var valid: Bool { !roomName.trimmed.isEmpty && roomName.count <= 80 && !name.trimmed.isEmpty && name.count <= 80 }
+    private var valid: Bool { !roomName.trimmed.isEmpty && !name.trimmed.isEmpty }
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("Room name, e.g. Indiranagar house", text: $roomName).textInputAutocapitalization(.words).focused($focused).submitLabel(.next)
-                    TextField("Your name in this room", text: $name).textContentType(.name).submitLabel(.done).onSubmit(create)
+                    TextField("Room name, e.g. Indiranagar house", text: limited($roomName, to: InputLimit.name)).textInputAutocapitalization(.words).focused($focused).submitLabel(.next)
+                    TextField("Your name in this room", text: limited($name, to: InputLimit.name)).textContentType(.name).textInputAutocapitalization(.words).submitLabel(.done).onSubmit(create)
                 } footer: { Text("You'll own this room and can invite or remove housemates.") }
             }
             .navigationTitle("Create room").navigationBarTitleDisplayMode(.inline)

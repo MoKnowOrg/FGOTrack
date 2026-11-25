@@ -49,7 +49,8 @@ struct PrimaryButton<Label: View>: View {
     }
 }
 
-/// Rupee amount field with a fixed ₹ prefix and the decimal keypad.
+/// Rupee amount field with a fixed ₹ prefix and the decimal keypad. Pasted or hardware-keyboard
+/// input is cleaned as it is typed, so the field can only ever hold digits and two decimals.
 struct AmountField<Focus: Hashable>: View {
     let placeholder: String
     @Binding var text: String
@@ -59,10 +60,57 @@ struct AmountField<Focus: Hashable>: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text("₹").font(font).foregroundStyle(.secondary).accessibilityHidden(true)
-            TextField(placeholder, text: $text).keyboardType(.decimalPad).font(font).focused(focus, equals: field)
+            TextField(placeholder, text: Binding(get: { text }, set: { text = sanitizedAmountInput($0) }))
+                .keyboardType(.decimalPad).font(font).focused(focus, equals: field)
                 .accessibilityLabel(placeholder)
         }
     }
+}
+
+/// Short floating confirmation, optionally with one action such as Undo.
+struct Banner: View {
+    let text: String
+    let icon: String
+    var action: (label: String, perform: () -> Void)?
+    var body: some View {
+        HStack(spacing: 12) {
+            Label(text, systemImage: icon).font(.subheadline.weight(.semibold)).lineLimit(1)
+            if let action { Button(action.label, action: action.perform).font(.subheadline.bold()) }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .background(.regularMaterial, in: Capsule()).shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+        .padding(.horizontal, 16).padding(.top, 8)
+        .transition(.move(edge: .top).combined(with: .opacity))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// A completion row under a text field: what will be filled, plus why it is suggested.
+struct SuggestionRow: View {
+    let title: String
+    var detail: String?
+    var icon = "clock.arrow.circlepath"
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: icon).foregroundStyle(.secondary).frame(width: 24).accessibilityHidden(true)
+                Text(title).foregroundStyle(.primary).lineLimit(1)
+                Spacer(minLength: 8)
+                if let detail { Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+            }.contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityHint("Fills in \(title)")
+    }
+}
+
+/// A text binding that stops accepting characters past `limit`.
+func limited(_ text: Binding<String>, to limit: Int) -> Binding<String> {
+    Binding(get: { text.wrappedValue }, set: { text.wrappedValue = String($0.prefix(limit)) })
+}
+
+/// Character limits shared by every form, matching server-side validation.
+enum InputLimit {
+    static let title = 120, name = 80, note = 500
 }
 
 extension View {
