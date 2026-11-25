@@ -213,6 +213,17 @@ struct RemoteLedgerRow: Decodable { let payload: LedgerEntry }
         struct Params: Encodable { let p_room: UUID; let p_user: UUID }
         await roomAction { _ = try await self.requireClient().rpc("remove_room_member", params: Params(p_room: member.room_id, p_user: member.user_id)).execute(); await self.refreshMembers() }
     }
+    /// Leaves the current room as a non-owner member. Pooled data stays with the room.
+    func leaveRoom() async {
+        struct Params: Encodable { let p_room: UUID }
+        guard let room = currentRoom, !isOwner else { error = "Transfer ownership to another member before leaving."; return }
+        await roomAction {
+            // Push pending pooled edits to the room before access is lost.
+            await HouseStore.shared.sync()
+            _ = try await self.requireClient().rpc("leave_room", params: Params(p_room: room.id)).execute()
+            await self.refreshRooms()
+        }
+    }
     /// Runs a room change exclusively. On failure `error` holds the reason.
     @discardableResult private func roomAction(_ action: () async throws -> Void) async -> Bool {
         guard !working, !HouseStore.shared.syncing, user != nil else { error = "Wait for the current sync to finish, then try again."; return false }

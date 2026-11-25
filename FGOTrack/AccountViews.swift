@@ -10,6 +10,7 @@ struct AccountSections: View {
     @State private var transferring: RoomMember?
     @State private var importing = false
     @State private var signingOut = false
+    @State private var leaving = false
     private var busy: Bool { backend.working || store.syncing }
     var body: some View {
         if let user = backend.user {
@@ -32,9 +33,15 @@ struct AccountSections: View {
                 if backend.isOwner { Button { inviting = true } label: { Label("Invite people", systemImage: "person.badge.plus") }.disabled(busy) }
                 Button { roomEditor = .join } label: { Label("Join with an invitation", systemImage: "envelope.open") }.disabled(busy)
                 Button { roomEditor = .create } label: { Label("Create a room", systemImage: "plus.circle") }.disabled(busy)
+                if backend.currentRoom != nil && !backend.isOwner {
+                    Button(role: .destructive) { leaving = true } label: { Label("Leave room", systemImage: "rectangle.portrait.and.arrow.right") }.disabled(busy)
+                }
             } header: { Text("Shared room") }
             footer: { Text(backend.currentRoom == nil ? "Create or join a room to share a pool. Personal expenses work without a room." : "Pooled expenses, budgets and photos are shared with this room's members.") }
             .sheet(item: $roomEditor) { RoomEditor(mode: $0) }
+            .confirmationDialog("Leave \(backend.currentRoom?.name ?? "this room")?", isPresented: $leaving, titleVisibility: .visible) {
+                Button("Leave room", role: .destructive) { Task { await backend.leaveRoom() } }
+            } message: { Text("You will lose access to this room's pooled bills, budgets and receipt photos. Pooled data stays with the room for its other members. Your personal expenses are not affected. You can rejoin later with a new invitation.") }
             .sheet(isPresented: $inviting) { if let room = backend.currentRoom { InvitePeopleView(room: room) } }
             .onChange(of: backend.roomID) { _, _ in inviting = false }
             .onChange(of: backend.user?.id) { _, _ in inviting = false }
